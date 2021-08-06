@@ -1,73 +1,8 @@
 <template>
   <div class="reservation__container">
-    <div v-if="!ticketDetails['Start Date'] && !invalidLink"></div>
-
-    <div
-      v-else-if="invalidLink || ticketDetails['Start Date'].includes('#')"
-      class="reservation__invalid-link"
-    >
-      Invalid Link
-    </div>
-
-    <card
-      v-else
-      data-image="/img/86.jpg"
-      :multiplier="ticketDetails['Name'].toUpperCase().length"
-    >
+    <card :multiplier="200">
       <div slot="header">
-        <h1 class="reservation__header">Little Paradise Reservation</h1>
-
-        <div class="reservation__subtitle">
-          Post KM88, Marikina-Infanta Hwy, Brgy. Cueva, Santa Maria, Laguna
-        </div>
-        <div class="reservation__subtitle">+639154311099</div>
-      </div>
-
-      <div slot="content" class="reservation__body">
-        <DescriptionItem>
-          <template #label> Booking ID </template>
-          <template #value>
-            {{ bookingId }}
-          </template>
-        </DescriptionItem>
-
-        <DescriptionItem>
-          <template #label> Check-in date </template>
-          <template #value>
-            {{ ticketDetails["Start Date"].substring(0, 15).toUpperCase() }}
-            {{ ticketDetails["Time In"].substring(15, 21).toUpperCase() }}
-          </template>
-        </DescriptionItem>
-
-        <DescriptionItem>
-          <template #label> Duration of stay </template>
-          <template #value>
-            {{ ticketDetails["Duration"].toUpperCase() }}
-          </template>
-        </DescriptionItem>
-
-        <DescriptionItem>
-          <template #label> Guest Name </template>
-          <template #value>
-            {{ ticketDetails["Name"].toUpperCase() }}
-          </template>
-        </DescriptionItem>
-
-        <DescriptionItem>
-          <template #label> Guest Count </template>
-          <template #value>
-            Maximum of {{ ticketDetails["Guest Count"].toUpperCase() }} people
-          </template>
-        </DescriptionItem>
-
-        <DescriptionItem>
-          <template #label> Booking Status </template>
-          <template #value>
-            <span :class="[bookingStatusClass]">
-              {{ ticketDetails["Payment Status"].toUpperCase() }}
-            </span>
-          </template>
-        </DescriptionItem>
+        <h1 class="reservation__header">{{ question }}</h1>
       </div>
     </card>
   </div>
@@ -76,78 +11,28 @@
 <script lang="ts">
 import Vue from "vue";
 import PublicGoogleSheetsParser from "public-google-sheets-parser";
-import { doCipher } from "@/utils";
 import Card from "@/components/Card.vue";
-import DescriptionItem from "@/components/DescriptionItem.vue";
-import isEmpty from "lodash/isEmpty";
 
 export default Vue.extend({
   components: {
     Card,
-    DescriptionItem,
   },
   data: () => {
     return {
-      ticketDetails: {} as { [key: string]: string | number },
-      invalidLink: false,
-      bookingId: null as string | null,
+      question: null,
     };
   },
-  computed: {
-    bookingStatusClass(): string {
-      const paymentStatus: string =
-        (this.ticketDetails["Payment Status"] as string) || "";
-
-      if (paymentStatus.includes("not")) {
-        return "booking-status--not-paid";
-      }
-
-      if (paymentStatus.includes("partially")) {
-        return "booking-status--partially-paid";
-      }
-
-      if (paymentStatus.includes("fully")) {
-        return "booking-status--fully-paid";
-      }
-
-      return "";
-    },
-  },
   mounted() {
-    const spreadsheetId = "1Qdl6oePPqalgQS_XZ8voAkRuHH1bwSXtUhBDANsS7Cs";
+    const spreadsheetId = "1kTyaxUD5Z3ZCFxaZn3C3PtFXJ5iKuAK1biOjFJUuZmk";
     const parser = new PublicGoogleSheetsParser();
-    const params = this.$route.params;
-    let id;
 
-    if (params && params.id) {
-      id = params.id;
-      this.bookingId = id;
-    }
+    parser.parse(spreadsheetId, "Sheet1").then((items: any) => {
+      const item = items[Math.floor(Math.random()*items.length)];
+      this.question = item && item.question;
 
-    if (id) {
-      const [s, i] = id.split("_");
-
-      parser.parse(spreadsheetId, "bookings").then((items: any) => {
-        const reservationDetails = items.find(
-          (item: any) => String(item.ID) === i
-        );
-
-        const reservationDetailsParsed: { [key: string]: string | number } = {};
-
-        for (let value in reservationDetails) {
-          reservationDetailsParsed[value] = doCipher(
-            reservationDetails[value],
-            s
-          );
-        }
-
-        this.ticketDetails = reservationDetailsParsed;
-
-        if (isEmpty(this.ticketDetails)) {
-          this.invalidLink = true;
-        }
-      });
-    }
+      console.log("items", items);
+      console.log("items", item);
+    });
   },
 });
 </script>
@@ -162,6 +47,7 @@ $small: 360px;
   color: white;
   font-size: 50px;
   font-weight: bolder;
+  padding: 10px;
 
   @media screen and (max-width: $small) {
     font-size: 30px;
